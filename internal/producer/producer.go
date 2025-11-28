@@ -5,24 +5,23 @@ import (
 	"time"
 
 	"github.com/omerahmer/motor_metrics/internal/config"
+	"github.com/omerahmer/motor_metrics/internal/kafka"
 	"github.com/omerahmer/motor_metrics/internal/marketcheck"
 )
 
 type Producer struct {
 	cfg      *config.Config
 	client   *marketcheck.Client
-	writer   Writer
+	writer   kafka.Writer
 	interval time.Duration
 }
 
-func New(cfg *config.Config, client *marketcheck.Client, writer Writer) *Producer {
-	defaultInterval := time.Minute
-
+func New(cfg *config.Config, client *marketcheck.Client, writer kafka.Writer) *Producer {
 	return &Producer{
 		cfg:      cfg,
 		client:   client,
 		writer:   writer,
-		interval: defaultInterval,
+		interval: time.Minute,
 	}
 }
 
@@ -52,18 +51,19 @@ func (p *Producer) ingestOnce(ctx context.Context) error {
 			continue
 		}
 
-		now := time.Now()
 		priceSnapshot := marketcheck.PricePoint{
 			Price: listing.Price,
-			Date:  now,
+			Date:  time.Now(),
 		}
-		enriched := marketcheck.EnrichedListng{
-			Listing: listing,
-			Build:   build,
+
+		enriched := marketcheck.EnrichedListing{
+			Listing:      listing,
+			Build:        *build,
+			PriceHistory: []marketcheck.PricePoint{priceSnapshot},
+			Valuation:    marketcheck.Valuation{},
 		}
-		if err := p.writer.Write(ctx, enriched); err != nil {
-			continue
-		}
+
+		_ = p.writer.Write(ctx, enriched)
 	}
 	return nil
 }

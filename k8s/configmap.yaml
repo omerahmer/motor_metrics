@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: motor-metrics-config
+  namespace: motor-metrics
+data:
+  MARKETCHECK_BASE_URL: "https://api.marketcheck.com/v2/"
+  KAFKA_BROKERS: "kafka:9092"
+  SEARCH_MAKE: "ford"
+  SEARCH_MODEL: "f-150"
+  SEARCH_ZIP: "92617"
+  SEARCH_RADIUS: "50"
+  DATABASE_HOST: "postgres"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "motor_metrics"
+  DATABASE_USER: "postgres"
+  DATABASE_SSLMODE: "disable"
+

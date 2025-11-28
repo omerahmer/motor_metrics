@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: motor-metrics-web
+  namespace: motor-metrics
+  labels:
+    app: motor-metrics-web
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app: motor-metrics-web
+

@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: motor-metrics-api
+  namespace: motor-metrics
+  labels:
+    app: motor-metrics-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: motor-metrics-api
+  template:
+    metadata:
+      labels:
+        app: motor-metrics-api
+    spec:
+      containers:
+      - name: api
+        image: 565944121659.dkr.ecr.us-east-1.amazonaws.com/motor-metrics-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: MARKETCHECK_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: motor-metrics-secrets
+              key: MARKETCHECK_API_KEY
+        - name: MARKETCHECK_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: motor-metrics-config
+              key: MARKETCHECK_BASE_URL
+        - name: KAFKA_BROKERS
+          valueFrom:
+            configMapKeyRef:
+              name: motor-metrics-config
+              key: KAFKA_BROKERS
+        - name: SEARCH_MAKE
+          valueFrom:
+            configMapKeyRef:
+              name: motor-metrics-config
+              key: SEARCH_MAKE
+        - name: SEARCH_MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: motor-metrics-config
+              key: SEARCH_MODEL
+        - name: SEARCH_ZIP
+          valueFrom:
+            configMapKeyRef:
+              name: motor-metrics-config
+              key: SEARCH_ZIP
+        - name: SEARCH_RADIUS
+          valueFrom:
+            configMapKeyRef:
+              name: motor-metrics-config
+              key: SEARCH_RADIUS
+        - name: DATABASE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: motor-metrics-config
+              key: DATABASE_HOST
+        - name: DATABASE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: motor-metrics-config
+              key: DATABASE_PORT
+        - name: DATABASE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: motor-metrics-config
+              key: DATABASE_NAME
+        - name: DATABASE_USER
+          valueFrom:
+            configMapKeyRef:
+              name: motor-metrics-config
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: motor-metrics-secrets
+              key: DATABASE_PASSWORD
+        - name: DATABASE_SSLMODE
+          valueFrom:
+            configMapKeyRef:
+              name: motor-metrics-config
+              key: DATABASE_SSLMODE
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+

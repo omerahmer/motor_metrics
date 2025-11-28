@@ -16,12 +16,22 @@ type Client struct {
 }
 
 func NewClient(apiKey string) *Client {
+	return NewClientWithURL(apiKey, "")
+}
+
+func NewClientWithURL(apiKey, baseUrl string) *Client {
+	if baseUrl == "" {
+		baseUrl = os.Getenv("MARKETCHECK_BASE_URL")
+		if baseUrl == "" {
+			baseUrl = "https://marketcheck-prod.apigee.net/v1"
+		}
+	}
 	return &Client{
 		apiKey: apiKey,
 		http: &http.Client{
 			Timeout: 10 * time.Second,
 		},
-		baseUrl: os.Getenv("MARKETCHECK_BASE_URL"),
+		baseUrl: baseUrl,
 	}
 }
 
@@ -54,36 +64,12 @@ func (c *Client) FetchListingByID(ctx context.Context, id string) (*Listing, err
 	return &listing, nil
 }
 
-func (c *Client) FetchBuildByID(ctx context.Context, vin string) (*Build, error) {
-	endpoint := fmt.Sprintf("decode/car/%s/specs", c.baseUrl, vin)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	q := req.URL.Query()
-	q.Set("api_key", c.apiKey)
-	req.URL.RawQuery = q.Encode()
-
-	res, err := c.http.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status %s", res.Status)
-	}
-
-	var build Build
-	if err := json.NewDecoder(res.Body).Decode(&build); err != nil {
-		return nil, err
-	}
-
-	return &build, nil
-}
 
 func (c *Client) FetchActiveListings(ctx context.Context, rows int) ([]Listing, error) {
+	return c.FetchActiveListingsWithFilters(ctx, rows, "", "", "", 0)
+}
+
+func (c *Client) FetchActiveListingsWithFilters(ctx context.Context, rows int, make, model, zip string, radius int) ([]Listing, error) {
 	endpoint := fmt.Sprintf("%s/search/car/active", c.baseUrl)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -93,6 +79,18 @@ func (c *Client) FetchActiveListings(ctx context.Context, rows int) ([]Listing, 
 	q := req.URL.Query()
 	q.Set("api_key", c.apiKey)
 	q.Set("rows", fmt.Sprintf("%d", rows))
+	if make != "" {
+		q.Set("make", make)
+	}
+	if model != "" {
+		q.Set("model", model)
+	}
+	if zip != "" {
+		q.Set("zip", zip)
+	}
+	if radius > 0 {
+		q.Set("radius", fmt.Sprintf("%d", radius))
+	}
 	req.URL.RawQuery = q.Encode()
 
 	res, err := c.http.Do(req)
