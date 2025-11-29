@@ -21,19 +21,16 @@ func NewPostgresRepository(dsn string) (*PostgresRepository, error) {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	// Set connection pool settings
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
-	// Test connection
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
 	repo := &PostgresRepository{db: db}
 
-	// Initialize schema
 	if err := repo.initSchema(context.Background()); err != nil {
 		return nil, fmt.Errorf("failed to initialize schema: %w", err)
 	}
@@ -88,8 +85,6 @@ func (r *PostgresRepository) initSchema(ctx context.Context) error {
 	return err
 }
 
-// PriceRepository implementation
-
 func (r *PostgresRepository) AddPrice(ctx context.Context, vin string, point marketcheck.PricePoint) error {
 	query := `
 		INSERT INTO price_history (vin, price, date)
@@ -123,8 +118,6 @@ func (r *PostgresRepository) GetHistory(ctx context.Context, vin string) ([]mark
 	}
 	return points, rows.Err()
 }
-
-// ListingRepository implementation
 
 func (r *PostgresRepository) SaveListing(ctx context.Context, listing *marketcheck.EnrichedListing) error {
 	listingJSON, err := json.Marshal(listing.Listing)
@@ -188,7 +181,7 @@ func (r *PostgresRepository) GetListingByVIN(ctx context.Context, vin string) (*
 	return &marketcheck.EnrichedListing{
 		Listing:      listing,
 		Build:        build,
-		PriceHistory: []marketcheck.PricePoint{}, // Will be populated separately if needed
+		PriceHistory: []marketcheck.PricePoint{},
 		Valuation:    valuation,
 	}, nil
 }

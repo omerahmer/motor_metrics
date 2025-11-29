@@ -41,7 +41,6 @@ func Load() Config {
 		DatabaseSSLMode:  GetString("DATABASE_SSLMODE", "disable"),
 	}
 
-	// Build DATABASE_URL if not provided
 	if cfg.DatabaseURL == "" {
 		cfg.DatabaseURL = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 			cfg.DatabaseHost, cfg.DatabasePort, cfg.DatabaseUser, cfg.DatabasePassword, cfg.DatabaseName, cfg.DatabaseSSLMode)

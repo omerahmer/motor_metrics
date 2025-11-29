@@ -5,8 +5,10 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/omerahmer/motor_metrics/internal/cache"
 	"github.com/omerahmer/motor_metrics/internal/config"
@@ -35,6 +37,28 @@ type EnrichedListingResponse struct {
 	Valuation    marketcheck.Valuation    `json:"valuation"`
 }
 
+func normalizeSearchTerm(s string) string {
+	s = strings.ToLower(s)
+	var result strings.Builder
+	for _, r := range s {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			result.WriteRune(r)
+		}
+	}
+	return result.String()
+}
+
+func matchesSearch(searchTerm, listingValue string) bool {
+	normalizedSearch := normalizeSearchTerm(searchTerm)
+	normalizedListing := normalizeSearchTerm(listingValue)
+
+	if normalizedSearch == "" {
+		return true
+	}
+
+	return strings.Contains(normalizedListing, normalizedSearch) || strings.Contains(normalizedSearch, normalizedListing)
+}
+
 func main() {
 	cfg := config.Load()
 
@@ -44,7 +68,6 @@ func main() {
 
 	mcClient := marketcheck.NewClientWithURL(cfg.MarketCheckKey, cfg.MarketCheckURL)
 
-	// Initialize database repository
 	if cfg.DatabaseURL == "" {
 		log.Fatal("DATABASE_URL environment variable is required")
 	}
@@ -58,26 +81,21 @@ func main() {
 
 	listingRepo := repo
 
-	// Initialize cache with 1 hour TTL
 	buildCache := cache.NewCache(1 * time.Hour)
 
-	// Initialize rate limiter: 10 requests per second, burst of 20
 	rateLimiter := ratelimit.NewRateLimiter(10.0, 20)
 
-	// Health check endpoint
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
 	})
 
-	// Readiness check endpoint
 	http.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{"status": "ready"})
 	})
 
 	searchHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Enable CORS
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
@@ -114,7 +132,6 @@ func main() {
 			}
 		}
 
-		// Set defaults
 		if req.Make == "" {
 			req.Make = cfg.Make
 		}
@@ -131,17 +148,27 @@ func main() {
 			req.Rows = 50
 		}
 
-		// Fetch listings with filters
-		listings, err := mcClient.FetchActiveListingsWithFilters(r.Context(), req.Rows, req.Make, req.Model, req.Zip, req.Radius)
+		listings, err := mcClient.FetchActiveListingsWithFilters(r.Context(), req.Rows*2, req.Make, req.Model, req.Zip, req.Radius)
 		if err != nil {
 			log.Printf("Error fetching listings: %v", err)
 			http.Error(w, "Failed to fetch listings", http.StatusInternalServerError)
 			return
 		}
 
-		filteredListings := listings
+		var filteredListings []marketcheck.Listing
+		for _, listing := range listings {
+			makeMatch := req.Make == "" || matchesSearch(req.Make, listing.Build.Make)
+			modelMatch := req.Model == "" || matchesSearch(req.Model, listing.Build.Model)
 
-		// Enrich listings with build info and valuation (parallel fetch with caching)
+			if makeMatch && modelMatch {
+				filteredListings = append(filteredListings, listing)
+			}
+		}
+
+		if len(filteredListings) > req.Rows {
+			filteredListings = filteredListings[:req.Rows]
+		}
+
 		enriched := make([]EnrichedListingResponse, 0, len(filteredListings))
 		var wg sync.WaitGroup
 		type buildResult struct {
@@ -151,29 +178,24 @@ func main() {
 		}
 		buildResults := make([]buildResult, len(filteredListings))
 
-		// Fetch builds in parallel with caching
 		for i, listing := range filteredListings {
-			// Check cache first
 			if cachedBuild, found := buildCache.GetBuild(listing.VIN); found {
 				buildResults[i] = buildResult{index: i, build: cachedBuild, err: nil}
 				continue
 			}
 
-			// If not in cache, fetch in parallel
 			wg.Add(1)
 			go func(idx int, vin string, listingBuild marketcheck.Build) {
 				defer wg.Done()
 				build, err := mcClient.FetchBuild(r.Context(), vin)
 				if err != nil {
 					log.Printf("Error fetching build for VIN %s: %v", vin, err)
-					// Use build from listing if available
 					if listingBuild.Make == "" {
 						buildResults[idx] = buildResult{index: idx, build: nil, err: err}
 						return
 					}
 					build = &listingBuild
 				}
-				// Cache the build
 				if build != nil {
 					buildCache.SetBuild(vin, build)
 				}
@@ -183,7 +205,6 @@ func main() {
 
 		wg.Wait()
 
-		// Build enriched listings
 		for i, listing := range filteredListings {
 			result := buildResults[i]
 			if result.build == nil {
@@ -197,7 +218,6 @@ func main() {
 				},
 			}
 
-			// Simple valuation (can be enhanced)
 			valuation := marketcheck.Valuation{
 				IsGoodValue: listing.Price < listing.MSRP && listing.MSRP > 0,
 				Score:       0.0,
@@ -214,7 +234,6 @@ func main() {
 			})
 		}
 
-		// Save listings to database
 		for _, listing := range enriched {
 			enrichedListing := &marketcheck.EnrichedListing{
 				Listing:      listing.Listing,
@@ -236,7 +255,6 @@ func main() {
 		json.NewEncoder(w).Encode(response)
 	})
 
-	// Apply rate limiting to search endpoint
 	http.Handle("/api/search", rateLimiter.Limit(searchHandler))
 
 	port := ":8080"

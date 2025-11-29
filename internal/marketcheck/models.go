@@ -25,7 +25,7 @@ func (p *PricePoint) UnmarshalJSON(data []byte) error {
 
 type Valuation struct {
 	IsGoodValue bool    `json:"is_good_value"`
-	Score       float64 `json:"score"` // e.g., deviation from market median
+	Score       float64 `json:"score"`
 }
 
 type Listing struct {
@@ -72,7 +72,7 @@ type Listing struct {
 	Dealer       Dealer       `json:"dealer"`
 	McDealership McDealership `json:"mc_dealership"`
 
-	Build Build `json:"build"` // For when MarketCheck already returns build details
+	Build Build `json:"build"`
 }
 
 type CarLocation struct {

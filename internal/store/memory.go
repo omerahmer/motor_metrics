@@ -7,7 +7,6 @@ import (
 	"github.com/omerahmer/motor_metrics/internal/marketcheck"
 )
 
-// MemoryStore implements PriceStore interface for in-memory storage
 type MemoryStore struct {
 	mu     sync.RWMutex
 	prices map[string][]marketcheck.PricePoint
@@ -35,4 +34,3 @@ func (s *MemoryStore) GetHistory(ctx context.Context, vin string) ([]marketcheck
 func (s *MemoryStore) Close() error {
 	return nil
 }
-

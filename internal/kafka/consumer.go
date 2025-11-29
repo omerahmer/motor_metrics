@@ -75,7 +75,6 @@ func (c *Consumer) Run(ctx context.Context) error {
 
 		listing.Valuation = marketcheck.ComputeValuation(fullHistory, listing.Listing.Price)
 
-		// Save enriched listing to database
 		if c.listingRepo != nil {
 			if err := c.listingRepo.SaveListing(ctx, &listing); err != nil {
 				log.Printf("error saving listing to database: %v", err)

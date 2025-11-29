@@ -32,6 +32,7 @@ interface Listing {
       options: string[];
       features: string[];
       high_value_features: string[];
+        options_packages?: string[];
       seller_comments?: string;
     };
     msrp?: number;
@@ -72,6 +73,8 @@ export default function Home() {
     model: string;
     zip: string;
     radius: number;
+    yearMin: number;
+    yearMax: number;
   }) => {
     setLoading(true);
     setError(null);
@@ -93,7 +96,14 @@ export default function Home() {
       }
 
       const data = await response.json();
-      setListings(data.listings || []);
+      const allListings = data.listings || [];
+      
+      const filteredListings = allListings.filter((listing: Listing) => {
+        const year = listing.build.year;
+        return year >= filters.yearMin && year <= filters.yearMax;
+      });
+      
+      setListings(filteredListings);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
       setListings([]);
@@ -103,28 +113,28 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      <div className="container mx-auto px-4 py-12 max-w-7xl">
         {/* Header */}
-        <header className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-3">
+        <header className="text-center mb-12">
+          <h1 className="text-5xl md:text-6xl font-bold text-slate-900 mb-3 tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Motor Metrics
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
+          <p className="text-lg text-slate-600 font-medium">
             Find your perfect vehicle with intelligent valuation insights
           </p>
         </header>
 
         {/* Search Filters */}
-        <div className="mb-8">
+        <div className="mb-12">
           <SearchFilters onSearch={handleSearch} loading={loading} />
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-red-800 dark:text-red-200">{error}</p>
-            <p className="text-sm text-red-600 dark:text-red-300 mt-1">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg shadow-sm">
+            <p className="text-red-800 font-medium">{error}</p>
+            <p className="text-sm text-red-600 mt-1">
               Make sure the API server is running on http://localhost:8080
             </p>
           </div>
@@ -132,19 +142,22 @@ export default function Home() {
 
         {/* Loading State */}
         {loading && (
-          <div className="flex justify-center items-center py-12">
+          <div className="flex justify-center items-center py-24">
+            <div className="flex flex-col items-center gap-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="text-slate-600 font-medium">Searching for vehicles...</p>
+            </div>
           </div>
         )}
 
         {/* Results */}
         {!loading && hasSearched && (
           <>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="mb-8">
+              <h2 className="text-3xl font-semibold text-slate-900 tracking-tight">
                 Search Results
                 {listings.length > 0 && (
-                  <span className="ml-2 text-lg font-normal text-gray-600 dark:text-gray-400">
+                  <span className="ml-3 text-xl font-normal text-slate-600">
                     ({listings.length} {listings.length === 1 ? "vehicle" : "vehicles"})
                   </span>
                 )}
@@ -152,9 +165,12 @@ export default function Home() {
             </div>
 
             {listings.length === 0 ? (
-              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-                <p className="text-gray-600 dark:text-gray-400 text-lg">
-                  No vehicles found. Try adjusting your search filters.
+              <div className="text-center py-24 bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200">
+                <p className="text-slate-700 text-xl font-medium">
+                  No vehicles found
+                </p>
+                <p className="text-slate-500 text-base mt-2">
+                  Try adjusting your search filters
                 </p>
               </div>
             ) : (
@@ -181,8 +197,8 @@ export default function Home() {
 
         {/* Initial State */}
         {!hasSearched && !loading && (
-          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
+          <div className="text-center py-24 bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200">
+            <p className="text-slate-600 text-lg font-medium">
               Enter your search criteria above to find vehicles
             </p>
           </div>

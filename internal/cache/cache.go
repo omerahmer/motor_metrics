@@ -23,7 +23,6 @@ func NewCache(ttl time.Duration) *Cache {
 		builds: make(map[string]*CachedBuild),
 		ttl:    ttl,
 	}
-	// Cleanup expired entries every minute
 	go c.cleanup()
 	return c
 }

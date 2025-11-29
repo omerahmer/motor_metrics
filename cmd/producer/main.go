@@ -21,7 +21,6 @@ func main() {
 
 	cfg := config.Load()
 
-	// Debug: Check if API key was loaded
 	if cfg.MarketCheckKey == "" {
 		log.Printf("DEBUG: MARKETCHECK_API_KEY env var value: %q", os.Getenv("MARKETCHECK_API_KEY"))
 		log.Fatal("MARKETCHECK_API_KEY environment variable is required")
@@ -33,7 +32,6 @@ func main() {
 		brokers[i] = strings.TrimSpace(brokers[i])
 	}
 
-	// Setup database repository
 	if cfg.DatabaseURL == "" {
 		log.Fatal("DATABASE_URL environment variable is required")
 	}
@@ -48,14 +46,11 @@ func main() {
 	priceRepo := repo
 	listingRepo := repo
 
-	// Setup MarketCheck client
 	mcClient := marketcheck.NewClientWithURL(cfg.MarketCheckKey, cfg.MarketCheckURL)
 
-	// Setup Kafka writer for producer
 	writer := kafka.NewKafkaWriter(brokers, "listings-raw")
 	defer writer.Close()
 
-	// Setup producer
 	prod := producer.New(&cfg, mcClient, writer)
 
 	// Setup consumer

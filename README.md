@@ -2,21 +2,16 @@
 
 A Go application that fetches vehicle listings from MarketCheck API, enriches them with build information, tracks price history, and computes valuations. Features include caching, rate limiting, PostgreSQL persistence with repository pattern, and Kubernetes deployment support for EKS.
 
-## 🚀 Quick Start
-
-See [QUICKSTART.md](QUICKSTART.md) for the fastest way to deploy everything.
-
-For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Features
 
-- 🚀 **Efficient API Usage**: In-memory caching reduces redundant API calls
-- ⚡ **Parallel Processing**: Build information fetched in parallel for faster responses
-- 🛡️ **Rate Limiting**: IP-based rate limiting (10 req/s, burst 20)
-- 🐳 **Dockerized**: Multi-stage Docker builds for optimized images
-- ☸️ **Kubernetes Ready**: Full K8s manifests for EKS deployment
-- 📈 **Auto-scaling**: Horizontal Pod Autoscaling based on CPU/memory
-- 🏥 **Health Checks**: Liveness and readiness probes for reliability
+- **Efficient API Usage**: In-memory caching reduces redundant API calls
+- **Parallel Processing**: Build information fetched in parallel for faster responses
+- **Rate Limiting**: IP-based rate limiting (10 req/s, burst 20)
+- **Containerized**: Multi-stage Docker builds for optimized images
+- **Kubernetes**: Full K8s manifests for EKS deployment
+- **Auto-scaling**: Horizontal Pod Autoscaling based on CPU/memory
+- **Health Checks**: Liveness and readiness probes for reliability
 
 ## Prerequisites
 

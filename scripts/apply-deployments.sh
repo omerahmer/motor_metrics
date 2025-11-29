@@ -1,14 +1,14 @@
 #!/bin/bash
 set -e
 
+cd "$(dirname "$0")/.."
+
 echo "🚀 Applying Kubernetes deployments..."
 
-# Apply PostgreSQL first
 echo "📊 Deploying PostgreSQL..."
 kubectl apply -f k8s/postgres-statefulset.yaml
 kubectl apply -f k8s/postgres-service.yaml
 
-# Wait for PostgreSQL to be ready (with longer timeout and continue on failure)
 echo "⏳ Waiting for PostgreSQL to be ready..."
 echo "   Note: This may take a few minutes as the EBS volume is being created..."
 kubectl wait --for=condition=ready pod -l app=postgres -n motor-metrics --timeout=600s || {
@@ -17,7 +17,6 @@ kubectl wait --for=condition=ready pod -l app=postgres -n motor-metrics --timeou
     echo "   The pod will start once the EBS volume is provisioned"
 }
 
-# Apply API and Web deployments
 echo "🌐 Deploying API and Web services..."
 kubectl apply -f k8s/api-deployment.yaml
 kubectl apply -f k8s/web-deployment.yaml

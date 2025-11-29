@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+cd "$(dirname "$0")/.."
+
 export ECR_BASE=565944121659.dkr.ecr.us-east-1.amazonaws.com
 export AWS_REGION=us-east-1
 

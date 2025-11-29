@@ -1,26 +1,26 @@
 #!/bin/bash
 set -e
 
+cd "$(dirname "$0")/.."
+
 echo "🚀 Deploying API and Web services..."
 
-# Check if images exist in ECR
 export ECR_BASE=565944121659.dkr.ecr.us-east-1.amazonaws.com
 export AWS_REGION=us-east-1
 
 echo "🔍 Checking if images exist in ECR..."
 if ! aws ecr describe-images --repository-name motor-metrics-api --region $AWS_REGION --image-ids imageTag=latest >/dev/null 2>&1; then
-    echo "❌ API image not found in ECR. Please run ./deploy-images.sh first"
+    echo "❌ API image not found in ECR. Please run ./scripts/deploy-images.sh first"
     exit 1
 fi
 
 if ! aws ecr describe-images --repository-name motor-metrics-web --region $AWS_REGION --image-ids imageTag=latest >/dev/null 2>&1; then
-    echo "❌ Web image not found in ECR. Please run ./deploy-images.sh first"
+    echo "❌ Web image not found in ECR. Please run ./scripts/deploy-images.sh first"
     exit 1
 fi
 
 echo "✅ Images found in ECR"
 
-# Apply deployments
 echo "📦 Applying API deployment..."
 kubectl apply -f k8s/api-deployment.yaml
 kubectl apply -f k8s/api-service.yaml

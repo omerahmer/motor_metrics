@@ -31,6 +31,7 @@ interface CarDetailModalProps {
         options: string[];
         features: string[];
         high_value_features: string[];
+        options_packages?: string[];
         seller_comments?: string;
       };
       msrp?: number;
@@ -67,6 +68,7 @@ export default function CarDetailModal({ listing, onClose }: CarDetailModalProps
   const options = car.extra?.options || [];
   const features = car.extra?.features || [];
   const highValueFeatures = car.extra?.high_value_features || [];
+  const optionsPackages = car.extra?.options_packages || [];
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -82,22 +84,22 @@ export default function CarDetailModal({ listing, onClose }: CarDetailModalProps
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex justify-between items-start z-10">
+        <div className="sticky top-0 bg-white border-b border-slate-200 p-6 flex justify-between items-start z-10 rounded-t-2xl">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-3xl font-semibold text-slate-900">
               {build.year} {build.make} {build.model}
             </h2>
             {build.trim && (
-              <p className="text-lg text-gray-600 dark:text-gray-400 mt-1">{build.trim}</p>
+              <p className="text-lg text-slate-600 font-medium mt-1">{build.trim}</p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
           >
-            <X className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+            <X className="w-6 h-6 text-slate-600" />
           </button>
         </div>
 
@@ -107,7 +109,7 @@ export default function CarDetailModal({ listing, onClose }: CarDetailModalProps
             <div className="mb-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {images.slice(0, 6).map((img, idx) => (
-                  <div key={idx} className="relative h-48 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
+                  <div key={idx} className="relative h-48 rounded-lg overflow-hidden bg-slate-100 shadow-md">
                     <Image
                       src={img}
                       alt={`${build.year} ${build.make} ${build.model} - Image ${idx + 1}`}
@@ -122,9 +124,9 @@ export default function CarDetailModal({ listing, onClose }: CarDetailModalProps
           )}
 
           {/* Price and Valuation */}
-          <div className="mb-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 rounded-xl">
+          <div className="mb-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
             <div className="flex items-baseline gap-4 mb-2">
-              <span className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+              <span className="text-4xl font-bold text-blue-600">
                 {formatPrice(car.price)}
               </span>
               {valuation.is_good_value ? (
@@ -132,18 +134,18 @@ export default function CarDetailModal({ listing, onClose }: CarDetailModalProps
                   ✓ Great Value
                 </span>
               ) : (
-                <span className="px-3 py-1 bg-red-500 text-white rounded-full text-sm font-semibold">
-                  ⚠ Fair Value
+                <span className="px-3 py-1 bg-slate-500 text-white rounded-full text-sm font-semibold">
+                  Fair Value
                 </span>
               )}
             </div>
             {car.msrp !== undefined && car.msrp > 0 && (
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-slate-600 font-medium mt-2">
                 MSRP: {formatPrice(car.msrp)} • Savings: {formatPrice(car.msrp - car.price)}
               </p>
             )}
             {valuation.score !== 0 && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              <p className="text-sm text-slate-600 font-medium mt-2">
                 Value Score: <span className="font-semibold">{(valuation.score * 100).toFixed(1)}%</span>
               </p>
             )}
@@ -151,70 +153,70 @@ export default function CarDetailModal({ listing, onClose }: CarDetailModalProps
 
           {/* Key Information Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400">Mileage</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{formatMiles(car.miles)}</p>
+            <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <p className="text-sm text-slate-600 font-medium mb-1">Mileage</p>
+              <p className="text-lg font-semibold text-slate-900">{formatMiles(car.miles)}</p>
             </div>
             {build.city_mpg > 0 && (
-              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">MPG</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-sm text-slate-600 font-medium mb-1">MPG</p>
+                <p className="text-lg font-semibold text-slate-900">
                   {build.city_mpg}/{build.highway_mpg}
                 </p>
               </div>
             )}
             {build.transmission && (
-              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Transmission</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">{build.transmission}</p>
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-sm text-slate-600 font-medium mb-1">Transmission</p>
+                <p className="text-lg font-semibold text-slate-900">{build.transmission}</p>
               </div>
             )}
             {build.drivetrain && (
-              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Drivetrain</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">{build.drivetrain}</p>
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-sm text-slate-600 font-medium mb-1">Drivetrain</p>
+                <p className="text-lg font-semibold text-slate-900">{build.drivetrain}</p>
               </div>
             )}
           </div>
 
           {/* Specifications */}
           <div className="mb-6">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Specifications</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <h3 className="text-xl font-semibold text-slate-900 mb-4">Specifications</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {build.body_type && (
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Body Type</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{build.body_type}</p>
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-xs text-slate-600 font-medium mb-1">Body Type</p>
+                  <p className="font-semibold text-slate-900">{build.body_type}</p>
                 </div>
               )}
               {build.fuel_type && (
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Fuel Type</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{build.fuel_type}</p>
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-xs text-slate-600 font-medium mb-1">Fuel Type</p>
+                  <p className="font-semibold text-slate-900">{build.fuel_type}</p>
                 </div>
               )}
               {build.doors !== undefined && build.doors > 0 && (
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Doors</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{build.doors}</p>
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-xs text-slate-600 font-medium mb-1">Doors</p>
+                  <p className="font-semibold text-slate-900">{build.doors}</p>
                 </div>
               )}
               {build.std_seating && (
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Seating</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{build.std_seating}</p>
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-xs text-slate-600 font-medium mb-1">Seating</p>
+                  <p className="font-semibold text-slate-900">{build.std_seating}</p>
                 </div>
               )}
               {build.vehicle_type && (
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Vehicle Type</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{build.vehicle_type}</p>
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-xs text-slate-600 font-medium mb-1">Vehicle Type</p>
+                  <p className="font-semibold text-slate-900">{build.vehicle_type}</p>
                 </div>
               )}
               {build.powertrain_type && (
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Powertrain</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{build.powertrain_type}</p>
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-xs text-slate-600 font-medium mb-1">Powertrain</p>
+                  <p className="font-semibold text-slate-900">{build.powertrain_type}</p>
                 </div>
               )}
             </div>
@@ -223,18 +225,18 @@ export default function CarDetailModal({ listing, onClose }: CarDetailModalProps
           {/* Colors */}
           {(car.exterior_color || car.interior_color) && (
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Colors</h3>
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">Colors</h3>
               <div className="flex gap-4">
                 {car.exterior_color && (
-                  <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex-1">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Exterior</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{car.exterior_color}</p>
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 flex-1">
+                    <p className="text-sm text-slate-600 font-medium mb-1">Exterior</p>
+                    <p className="font-semibold text-slate-900 text-lg">{car.exterior_color}</p>
                   </div>
                 )}
                 {car.interior_color && (
-                  <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex-1">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Interior</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{car.interior_color}</p>
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 flex-1">
+                    <p className="text-sm text-slate-600 font-medium mb-1">Interior</p>
+                    <p className="font-semibold text-slate-900 text-lg">{car.interior_color}</p>
                   </div>
                 )}
               </div>
@@ -242,33 +244,52 @@ export default function CarDetailModal({ listing, onClose }: CarDetailModalProps
           )}
 
           {/* Carfax Information */}
-          <div className="mb-6 flex gap-4">
+          <div className="mb-6 flex gap-3">
             {car.carfax_1_owner && (
-              <div className="px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-lg font-medium">
+              <div className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium border border-blue-200">
                 ✓ 1 Owner
               </div>
             )}
             {car.carfax_clean_title && (
-              <div className="px-4 py-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-lg font-medium">
+              <div className="px-4 py-2 bg-green-50 text-green-700 rounded-lg font-medium border border-green-200">
                 ✓ Clean Title
               </div>
             )}
           </div>
 
+          {/* Options Packages */}
+          {optionsPackages.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">
+                Options & Packages <span className="text-slate-500 font-normal">({optionsPackages.length})</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {optionsPackages.map((pkg, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-slate-900 font-medium text-sm"
+                  >
+                    {pkg}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* High Value Features */}
           {highValueFeatures.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                High Value Features
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">
+                High Value Features <span className="text-slate-500 font-normal">({highValueFeatures.length})</span>
               </h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {highValueFeatures.map((feature, idx) => (
-                  <span
+                  <div
                     key={idx}
-                    className="px-4 py-2 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-lg font-medium"
+                    className="p-3 bg-yellow-50 rounded-lg border border-yellow-200 text-yellow-900 font-medium text-sm"
                   >
                     {feature}
-                  </span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -277,14 +298,14 @@ export default function CarDetailModal({ listing, onClose }: CarDetailModalProps
           {/* All Options */}
           {options.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                All Options & Features ({options.length})
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">
+                Options <span className="text-slate-500 font-normal">({options.length})</span>
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {options.map((option, idx) => (
                   <div
                     key={idx}
-                    className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-900 dark:text-white"
+                    className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-slate-900 font-medium text-sm"
                   >
                     {option}
                   </div>
@@ -296,14 +317,14 @@ export default function CarDetailModal({ listing, onClose }: CarDetailModalProps
           {/* Features */}
           {features.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                Features ({features.length})
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">
+                Features <span className="text-slate-500 font-normal">({features.length})</span>
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {features.map((feature, idx) => (
                   <div
                     key={idx}
-                    className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-900 dark:text-white"
+                    className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-slate-900 font-medium text-sm"
                   >
                     {feature}
                   </div>
@@ -315,33 +336,35 @@ export default function CarDetailModal({ listing, onClose }: CarDetailModalProps
           {/* Seller Comments */}
           {car.extra?.seller_comments && (
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Seller Comments</h3>
-              <p className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">Seller Comments</h3>
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-slate-900 font-medium">
                 {car.extra.seller_comments}
               </p>
+              </div>
             </div>
           )}
 
           {/* Dealer Information */}
           {car.dealer && (
-            <div className="mb-6 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Dealer Information</h3>
+            <div className="mb-6 p-6 bg-slate-50 rounded-xl border border-slate-200">
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">Dealer Information</h3>
               <div className="space-y-2">
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">{car.dealer.name}</p>
+                <p className="text-lg font-semibold text-slate-900">{car.dealer.name}</p>
                 {car.dealer.city && car.dealer.state && (
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="text-slate-600 font-medium">
                     {car.dealer.city}, {car.dealer.state}
                   </p>
                 )}
                 {car.dealer.phone && (
-                  <p className="text-gray-600 dark:text-gray-400">Phone: {car.dealer.phone}</p>
+                  <p className="text-slate-600 font-medium">Phone: {car.dealer.phone}</p>
                 )}
                 {car.dealer.website && (
                   <a
                     href={car.dealer.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                    className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all"
                   >
                     Visit Website
                   </a>
@@ -351,9 +374,9 @@ export default function CarDetailModal({ listing, onClose }: CarDetailModalProps
           )}
 
           {/* VIN */}
-          <div className="mb-6">
-            <p className="text-sm text-gray-600 dark:text-gray-400">VIN</p>
-            <p className="font-mono text-gray-900 dark:text-white">{car.vin}</p>
+          <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <p className="text-sm text-slate-600 font-medium mb-2">VIN</p>
+            <p className="font-mono text-lg font-semibold text-slate-900">{car.vin}</p>
           </div>
 
           {/* Action Buttons */}
@@ -362,13 +385,13 @@ export default function CarDetailModal({ listing, onClose }: CarDetailModalProps
               href={car.vdp_url || "#"}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 text-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg transition-all hover:shadow-lg"
+              className="flex-1 text-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all"
             >
               View Full Listing
             </a>
             <button
               onClick={onClose}
-              className="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold rounded-lg transition-all"
+              className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-900 font-semibold rounded-lg transition-all"
             >
               Close
             </button>
