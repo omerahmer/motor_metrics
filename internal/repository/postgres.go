@@ -259,6 +259,34 @@ func (r *PostgresRepository) GetListings(ctx context.Context, filters ListingFil
 	return listings, rows.Err()
 }
 
+func (r *PostgresRepository) GetModelsForMake(ctx context.Context, make string) ([]string, error) {
+	query := `
+		SELECT DISTINCT build_data->>'model' as model
+		FROM listings
+		WHERE build_data->>'make' ILIKE $1
+		AND build_data->>'model' IS NOT NULL
+		AND build_data->>'model' != ''
+		ORDER BY model ASC
+	`
+	rows, err := r.db.QueryContext(ctx, query, make)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var models []string
+	for rows.Next() {
+		var model string
+		if err := rows.Scan(&model); err != nil {
+			continue
+		}
+		if model != "" {
+			models = append(models, model)
+		}
+	}
+	return models, rows.Err()
+}
+
 func (r *PostgresRepository) Close() error {
 	return r.db.Close()
 }

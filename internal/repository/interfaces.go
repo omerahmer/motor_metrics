@@ -16,6 +16,7 @@ type ListingRepository interface {
 	SaveListing(ctx context.Context, listing *marketcheck.EnrichedListing) error
 	GetListingByVIN(ctx context.Context, vin string) (*marketcheck.EnrichedListing, error)
 	GetListings(ctx context.Context, filters ListingFilters) ([]*marketcheck.EnrichedListing, error)
+	GetModelsForMake(ctx context.Context, make string) ([]string, error)
 	Close() error
 }
 

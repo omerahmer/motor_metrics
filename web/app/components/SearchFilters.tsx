@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, startTransition } from "react";
+import makesData from "../../makes.json";
 
 interface SearchFiltersProps {
   onSearch: (filters: {
@@ -17,11 +18,61 @@ interface SearchFiltersProps {
 export default function SearchFilters({ onSearch, loading }: SearchFiltersProps) {
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
+  const [models, setModels] = useState<string[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
   const [zip, setZip] = useState("");
   const [radius, setRadius] = useState(50);
   const [yearMin, setYearMin] = useState(2015);
   const [yearMax, setYearMax] = useState(2025);
   const currentYear = new Date().getFullYear();
+  const makes = makesData as string[];
+
+  useEffect(() => {
+    if (!make) {
+      startTransition(() => {
+        setModels([]);
+        setModel("");
+      });
+      return;
+    }
+
+    let cancelled = false;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
+    startTransition(() => {
+      setLoadingModels(true);
+      setModel("");
+    });
+
+    fetch(`${apiUrl}/api/models?make=${encodeURIComponent(make)}`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (!cancelled) {
+          startTransition(() => {
+            setModels(data.models || []);
+            setLoadingModels(false);
+          });
+        }
+      })
+      .catch(err => {
+        if (!cancelled) {
+          console.error("Error fetching models:", err);
+          startTransition(() => {
+            setModels([]);
+            setLoadingModels(false);
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [make]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,25 +93,38 @@ export default function SearchFilters({ onSearch, loading }: SearchFiltersProps)
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Make
             </label>
-            <input
-              type="text"
+            <select
               value={make}
               onChange={(e) => setMake(e.target.value)}
-              placeholder="e.g., Ford, Toyota"
-              className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm rounded-lg border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm hover:shadow-md"
-            />
+              className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm rounded-lg border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm hover:shadow-md"
+            >
+              <option value="">Select a make</option>
+              {makes.map((makeOption) => (
+                <option key={makeOption} value={makeOption}>
+                  {makeOption}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Model
             </label>
-            <input
-              type="text"
+            <select
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              placeholder="e.g., F-150, Camry"
-              className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm rounded-lg border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm hover:shadow-md"
-            />
+              disabled={!make || loadingModels}
+              className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm rounded-lg border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="">
+                {loadingModels ? "Loading models..." : !make ? "Select a make first" : "Select a model"}
+              </option>
+              {models.map((modelOption) => (
+                <option key={modelOption} value={modelOption}>
+                  {modelOption}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         

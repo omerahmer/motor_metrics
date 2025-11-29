@@ -32,7 +32,7 @@ interface Listing {
       options: string[];
       features: string[];
       high_value_features: string[];
-        options_packages?: string[];
+      options_packages?: string[];
       seller_comments?: string;
     };
     msrp?: number;
@@ -67,6 +67,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [sortOption, setSortOption] = useState("none");
 
   const handleSearch = async (filters: {
     make: string;
@@ -88,21 +89,21 @@ export default function Home() {
       if (filters.radius) params.append("radius", filters.radius.toString());
       params.append("rows", "50");
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
       const response = await fetch(`${apiUrl}/api/search?${params.toString()}`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch listings: ${response.statusText}`);
       }
 
       const data = await response.json();
       const allListings = data.listings || [];
-      
+
       const filteredListings = allListings.filter((listing: Listing) => {
         const year = listing.build.year;
         return year >= filters.yearMin && year <= filters.yearMax;
       });
-      
+
       setListings(filteredListings);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -111,6 +112,31 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  const sortedListings = [...listings].sort((a, b) => {
+    switch (sortOption) {
+      case "miles-asc":
+        return a.listing.miles - b.listing.miles;
+
+      case "miles-desc":
+        return b.listing.miles - a.listing.miles;
+
+      case "price-asc":
+        return a.listing.price - b.listing.price;
+
+      case "price-desc":
+        return b.listing.price - a.listing.price;
+
+      case "year-asc":
+        return a.build.year - b.build.year;
+
+      case "year-desc":
+        return b.build.year - a.build.year;
+
+      default:
+        return 0;
+    }
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
@@ -144,8 +170,10 @@ export default function Home() {
         {loading && (
           <div className="flex justify-center items-center py-24">
             <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <p className="text-slate-600 font-medium">Searching for vehicles...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="text-slate-600 font-medium">
+                Searching for vehicles...
+              </p>
             </div>
           </div>
         )}
@@ -156,15 +184,32 @@ export default function Home() {
             <div className="mb-8">
               <h2 className="text-3xl font-semibold text-slate-900 tracking-tight">
                 Search Results
-                {listings.length > 0 && (
+                {sortedListings.length > 0 && (
                   <span className="ml-3 text-xl font-normal text-slate-600">
-                    ({listings.length} {listings.length === 1 ? "vehicle" : "vehicles"})
+                    ({sortedListings.length}{" "}
+                    {sortedListings.length === 1 ? "vehicle" : "vehicles"})
                   </span>
                 )}
               </h2>
             </div>
 
-            {listings.length === 0 ? (
+            <div className="mb-6 flex justify-end">
+              <select
+                className="border border-slate-300 rounded-lg px-3 py-2"
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+              >
+                <option value="none">Sort By</option>
+                <option value="miles-asc">Miles (Low → High)</option>
+                <option value="miles-desc">Miles (High → Low)</option>
+                <option value="price-asc">Price (Low → High)</option>
+                <option value="price-desc">Price (High → Low)</option>
+                <option value="year-asc">Year (Oldest → Newest)</option>
+                <option value="year-desc">Year (Newest → Oldest)</option>
+              </select>
+            </div>
+
+            {sortedListings.length === 0 ? (
               <div className="text-center py-24 bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200">
                 <p className="text-slate-700 text-xl font-medium">
                   No vehicles found
@@ -175,7 +220,7 @@ export default function Home() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {listings.map((listing) => (
+                {sortedListings.map((listing) => (
                   <CarCard
                     key={listing.listing.id || listing.listing.vin}
                     listing={listing}

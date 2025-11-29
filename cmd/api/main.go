@@ -38,6 +38,7 @@ type EnrichedListingResponse struct {
 }
 
 func normalizeSearchTerm(s string) string {
+	s = strings.TrimSpace(s)
 	s = strings.ToLower(s)
 	var result strings.Builder
 	for _, r := range s {
@@ -56,7 +57,19 @@ func matchesSearch(searchTerm, listingValue string) bool {
 		return true
 	}
 
-	return strings.Contains(normalizedListing, normalizedSearch) || strings.Contains(normalizedSearch, normalizedListing)
+	if strings.HasPrefix(normalizedListing, normalizedSearch) {
+		return true
+	}
+
+	if strings.Contains(normalizedListing, normalizedSearch) {
+		return true
+	}
+
+	if len(normalizedSearch) > len(normalizedListing) && strings.Contains(normalizedSearch, normalizedListing) {
+		return true
+	}
+
+	return false
 }
 
 func main() {
@@ -117,9 +130,9 @@ func main() {
 				return
 			}
 		} else {
-			req.Make = r.URL.Query().Get("make")
-			req.Model = r.URL.Query().Get("model")
-			req.Zip = r.URL.Query().Get("zip")
+			req.Make = strings.TrimSpace(r.URL.Query().Get("make"))
+			req.Model = strings.TrimSpace(r.URL.Query().Get("model"))
+			req.Zip = strings.TrimSpace(r.URL.Query().Get("zip"))
 			if radiusStr := r.URL.Query().Get("radius"); radiusStr != "" {
 				if radius, err := strconv.Atoi(radiusStr); err == nil {
 					req.Radius = radius
@@ -131,6 +144,10 @@ func main() {
 				}
 			}
 		}
+
+		req.Make = strings.TrimSpace(req.Make)
+		req.Model = strings.TrimSpace(req.Model)
+		req.Zip = strings.TrimSpace(req.Zip)
 
 		if req.Make == "" {
 			req.Make = cfg.Make
@@ -256,6 +273,57 @@ func main() {
 	})
 
 	http.Handle("/api/search", rateLimiter.Limit(searchHandler))
+
+	modelsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		if r.Method != "GET" {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		make := strings.TrimSpace(r.URL.Query().Get("make"))
+		if make == "" {
+			http.Error(w, "make parameter is required", http.StatusBadRequest)
+			return
+		}
+
+		models, err := listingRepo.GetModelsForMake(r.Context(), make)
+		if err != nil {
+			log.Printf("Error fetching models for make %s from database: %v", make, err)
+		}
+
+		if len(models) == 0 {
+			log.Printf("No models found in database for make %s, fetching from MarketCheck API", make)
+			marketcheckModels, err := mcClient.FetchModelsForMake(r.Context(), make)
+			if err != nil {
+				log.Printf("Error fetching models for make %s from MarketCheck: %v", make, err)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(map[string]interface{}{
+					"make":   make,
+					"models": []string{},
+				})
+				return
+			}
+			models = marketcheckModels
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"make":   make,
+			"models": models,
+		})
+	})
+
+	http.Handle("/api/models", modelsHandler)
 
 	port := ":8080"
 	log.Printf("API server starting on http://localhost%s", port)

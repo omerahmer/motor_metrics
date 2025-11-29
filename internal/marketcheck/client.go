@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -63,7 +65,6 @@ func (c *Client) FetchListingByID(ctx context.Context, id string) (*Listing, err
 
 	return &listing, nil
 }
-
 
 func (c *Client) FetchActiveListings(ctx context.Context, rows int) ([]Listing, error) {
 	return c.FetchActiveListingsWithFilters(ctx, rows, "", "", "", 0)
@@ -141,4 +142,58 @@ func (c *Client) FetchBuild(ctx context.Context, vin string) (*Build, error) {
 	}
 
 	return &build, nil
+}
+
+func (c *Client) FetchModelsForMake(ctx context.Context, makeParam string) ([]string, error) {
+	makeParam = strings.TrimSpace(makeParam)
+	if makeParam == "" {
+		return nil, fmt.Errorf("make parameter cannot be empty")
+	}
+
+	nhtsaURL := fmt.Sprintf("https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMake/%s?format=json", makeParam)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, nhtsaURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status %s from NHTSA API", res.Status)
+	}
+
+	var response struct {
+		Count   int    `json:"Count"`
+		Message string `json:"Message"`
+		Results []struct {
+			MakeID    int    `json:"Make_ID"`
+			MakeName  string `json:"Make_Name"`
+			ModelID   int    `json:"Model_ID"`
+			ModelName string `json:"Model_Name"`
+		} `json:"Results"`
+	}
+
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to decode NHTSA API response: %w", err)
+	}
+
+	if response.Count == 0 {
+		return nil, fmt.Errorf("no models found for make: %s", makeParam)
+	}
+
+	models := make([]string, 0, len(response.Results))
+	modelSet := make(map[string]bool)
+	for _, result := range response.Results {
+		if result.ModelName != "" && !modelSet[result.ModelName] {
+			models = append(models, result.ModelName)
+			modelSet[result.ModelName] = true
+		}
+	}
+	sort.Strings(models)
+
+	return models, nil
 }

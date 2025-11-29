@@ -21,7 +21,7 @@ func New(cfg *config.Config, client *marketcheck.Client, writer kafka.Writer) *P
 		cfg:      cfg,
 		client:   client,
 		writer:   writer,
-		interval: time.Minute,
+		interval: time.Hour * 24,
 	}
 }
 
