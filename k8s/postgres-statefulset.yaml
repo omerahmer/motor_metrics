@@ -90,7 +90,7 @@ spec:
       name: postgres-storage
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: gp2  # AWS EBS gp2 with WaitForFirstConsumer
+      storageClassName: gp3-eks-auto  # AWS EBS gp2 with WaitForFirstConsumer
       resources:
         requests:
           storage: 20Gi
